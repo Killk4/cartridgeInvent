@@ -92,6 +92,7 @@ while server_work:
                     # Первым сообщением передаётся имя клиента
                     if data[0] == 'name':
                         cl.name = data[1]
+                        print(f'{cl.name} > подключился')
             except:
                 pass
 
@@ -99,13 +100,7 @@ while server_work:
                 try:
 
                     # way - Where are you (Где ты?) должен вернуть imh
-                    cl.conn.send('mes:way;'.encode())
-                    
-                    # Если есть команда, то отправить её
-                    if command:
-                        cl.conn.send(command_text.encode())
-                        command_text = ''  
-                        command = False                      
+                    cl.conn.send('mes:way;'.encode())                    
                     
                 # Если не удалось отправить, то значит клиент оффлайн
                 except:
