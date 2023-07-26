@@ -51,6 +51,8 @@ if (toBool(config['CONFIG']['local'])):
 else:
     server_IP = myIP()  
 
+client_list = [] # Список клиентов по умолчанию пустой
+
 # Запуск сервера
 main_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)     # AF_INET работа с IPv4, SOCK_STREAM работа с TCP
 main_socket.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)   # Указывает на то, что не надо отправлять собранные пакеты, а слать информацию сразу
@@ -67,6 +69,50 @@ print(f'Сервер запущен по адресу {server_IP} на {server_P
 while server_work:
     try:
         time.sleep(1) # Задержка чтобы не положить порт
+        try:
+                client_socket, client_addr = main_socket.accept() # Получаем новое подключение. Сокет и адрес клиента.
+                client_socket.setblocking(0)
+                
+                new_client = Client_machine(client_socket, client_addr) # Создаём нового клиента
+                client_list.append(new_client) # Записываем клиента в список
+
+        except Exception as e:
+            pass
+
+        # Чтение сообщений от клиентов
+        for cl in client_list:
+            try:
+                # Парсинг сообщений на блоки
+                # Из mes:1;mes:2;mes:3; получаем [['mes', '1'], ['mes', '2'], ['mes', '3']]
+                data = cl.conn.recv(2**20).decode() # Получение сообщений
+                data = data.split(';')
+                for d in data:
+                    data = d.split(':')
+
+                    # Первым сообщением передаётся имя клиента
+                    if data[0] == 'name':
+                        cl.name = data[1]
+            except:
+                pass
+
+        for cl in client_list:
+                try:
+
+                    # way - Where are you (Где ты?) должен вернуть imh
+                    cl.conn.send('mes:way;'.encode())
+                    
+                    # Если есть команда, то отправить её
+                    if command:
+                        cl.conn.send(command_text.encode())
+                        command_text = ''  
+                        command = False                      
+                    
+                # Если не удалось отправить, то значит клиент оффлайн
+                except:
+                    client_list.remove(cl)
+                    cl.conn.close()
+                
+                    print(f'{cl.name} > отключился')
 
     except:
         server_work = False
